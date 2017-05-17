@@ -16,5 +16,7 @@ The Following actions are performed:
 
 The script can be configured to upload the data to:
   https://www.wigle.net/
+  
   http://www.pi-resource.com/
+  
   An FTP server specified by you
