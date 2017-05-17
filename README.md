@@ -15,6 +15,6 @@ The Following actions are performed:
   9. Wait a set amount of time before restarting this script
 
 The script can be configured to upload the data to:
-  https://www.wigle.net/
-  http://www.pi-resource.com/
-  An FTP server specified by you
+  1. https://www.wigle.net/
+  2. http://www.pi-resource.com/
+  3. An FTP server specified by you
