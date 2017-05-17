@@ -24,7 +24,7 @@
 #
 #
 # Number of seconds the script pauses when it is started, to enable the GPS to get a fix.
-timer1=60
+timer1=30
 # Once running, the number of seconds before Kismet Server is restarted, log files compressed and an attempt to upload them is made.
 timer2=300
 #
@@ -45,12 +45,12 @@ ftpRemoteDirectory=/
 ftpUser=
 ftpPassword=
 ftpConnectTimeout=3
-# 
+#
 # Delete files once they have been uploaded
 #	1 = yes
 #	2 = No
 deleteAfterUpload=1
-#	
+#
 # This script will delete the oldest wardriving files even if they havent been uploaded once the disk space utilisation reaches a specified percentage.
 # Default is set to 95%, once more than 95% of the disk has been used then war driving output files will be deleted
 filesystem=/dev/root
