@@ -4,9 +4,6 @@ Please check out http://www.pi-resource.com/?page_id=378 for full details of thi
 
 Script to automate the uploading of Kismet WarDriving logs.
 
-User configuration separated out from main bash script. Configuration file - WarDriving.cfg
-An example config file is provided in WarDriving.cfg.example
-
 The Following actions are performed:
   1. Check directory structure exists, if it doesn't, create it
   2. Stop kismet server to force it to write out the log files
@@ -21,3 +18,7 @@ The script can be configured to upload the data to:
   1. https://www.wigle.net/
   2. http://www.pi-resource.com/
   3. An FTP server specified by you
+
+Changes since last version
+User configuration separated out from main bash script. Configuration file - WarDriving.cfg
+An example config file is provided in WarDriving.cfg.example
