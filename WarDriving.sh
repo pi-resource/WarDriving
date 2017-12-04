@@ -15,7 +15,7 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-# Version: 1.1
+# Version: 1.2
 # Date: 2017-11-15
 
 #############
@@ -193,9 +193,12 @@ function displayConfig {
 	printf "\n%s    Files will be deleted even if not uploaded once used disk space exceeds: %s%s%s%s%s %%"  $DEFAULT $YELLOW $BOLD $UNDERLINE "$filesystemUsedSpaceLimit" $DEFAULT
 }
 
-function checkForAndUploadWigle {
+function UploadToWigle {
+	
+	# Variable which is set to zero after the first upload, so the header is only printed out to screen the once.
+	firstWigleUpload=1
 
-	#defina an array to capture file names to be uploaded to Wigle
+	#define an array to capture file names to be uploaded to Wigle
 	filesWigle=()
 
 	#identify files with the first charactor set to Y
@@ -212,42 +215,66 @@ function checkForAndUploadWigle {
 		if [ -n "$wigleUserName" ] && [ -n "$wiglePassword" ]; then
 			printf "\n%sLogging into wigle.net: " $MAGENTA
 			loginResponse=$(curl --silent --max-time 5 -A 'pi-resource' -c /home/pi/WarDriving/cookies/wigle.txt -d 'credential_0='$wigleUserName'&credential_1='$wiglePassword 'https://api.wigle.net/api/v2/login')
-			printf "%sWARNING%s - VARIFICATION CODE NOT YET WRITTEN\n%s" $CYAN $DEFAULT "$loginResponse"
+
+			# Check login was successful
+			if [[ "$loginResponse" == *"\"success\":true"* ]]; then
+				printf "%sSUCCESS" $GREEN
+			else
+				printf "%sERROR%s - Login to Wigle failed. Proceeding to upload as Anonymous. Error returned: %s" $RED $DEFAULT $loginResponse
+			fi
+
 		fi
 
 		# Upload files to Wigle
-		for fileName in "${filesWigle[@]}"
+		for file in "${filesWigle[@]}"
 		do
-			baseFileName=$(basename "$fileName")
-			printf "\n%sUploading to Wigle: %s%s" $MAGENTA $DEFAULT "$baseFileName"
-			uploadResponse=$(curl --silent --max-time 60 -A 'pi-resource' -b /home/pi/WarDriving/cookies/wigle.txt -F "observer=$wigleUserName" -F "file=@$fileName" https://api.wigle.net/api/v2/file/upload)
-			printf "%s WARNING%s - VARIFICATION CODE NOT YET WRITTEN\n%s" $CYAN $DEFAULT "$uploadResponse"
-
-			#rename file to replace the Y flag with an N flag
-			newBaseFileName="N${baseFileName:1}"
-			mv -f "$fileName" "$(dirname "$fileName")"/"$newBaseFileName"
+			baseFileName=$(basename "$file")
+			
+			if [ $firstWigleUpload -eq 1 ]; then 
+				printf "\n%sUploading %s%s%i%s files to Wigle:" $MAGENTA $YELLOW $UNDERLINE ${#filesWigle[@]} $MAGENTA
+				let firstWigleUpload=0
+			fi
+						
+			printf "\n      %s%s " $DEFAULT "$baseFileName"
+			uploadResponse=$(curl --silent --max-time 60 -A 'pi-resource' -b /home/pi/WarDriving/cookies/wigle.txt -F "observer=$wigleUserName" -F "file=@$file" https://api.wigle.net/api/v2/file/upload)
+			
+			# Check upload was successful
+			if [[ "$uploadResponse" == *"\"success\":true"* ]]; then
+				printf " %sSUCCESS" $GREEN
+			
+				#rename file to replace the Y flag with an N flag
+				newBaseFileName="N${baseFileName:1}"
+				mv -f "$file" "$(dirname "$file")"/"$newBaseFileName"				
+			else
+				printf "%s ERROR%s - Upload to Wigle failed. %s" $RED $DEFAULT $uploadResponse
+			fi			
 		done
 	fi
 }
 
-function checkForAndUploadPiResource {
+function UploadToPiResource {
+	
+	#define an array to capture file names to be uploaded to PiResource
+	filesPiResource=()
 
-	# Variable which is set to zero after the first upload, so the header is only printed out to screen the once.
-	firstPiResourceUpload=1
-
+	#identify files with the second charactor set to Y	
 	for file in /home/pi/WarDriving/logs/compressed/*
 	do
 		baseFileName=$(basename "$file")
-		baseFileNameWithoutFlags="${baseFileName:4}"  #base filename with the first 3 Flags and dot removed.
-
-		#identify files with the second charactor set to Y
 		if [[ ${baseFileName:1:1} == "Y" ]]; then
-
-			# Only print the header to screen the once.
-			if [ $firstPiResourceUpload -eq 1 ]; then 
-				printf "\n%sUploading file to Pi-Resource:" $MAGENTA
-				let firstPiResourceUpload=0
-			fi
+			filesPiResource+=("$file")
+		fi
+	done
+		
+	if [ ${#filesPiResource[@]} -ne 0 ]; then            # Check if the array is empty, true if non-zero returned.		
+		printf "\n%sUploading %s%i%s files to %swww.pi-resource.com%s:" $MAGENTA $YELLOW$UNDERLINE ${#filesPiResource[@]} $MAGENTA $BLUE$UNDERLINE $MAGENTA
+		
+		# Upload files to PiResource
+		for file in "${filesPiResource[@]}"
+		do
+		
+			baseFileName=$(basename "$file")
+			baseFileNameWithoutFlags="${baseFileName:4}"  #base file name with the first 3 Flags and dot removed.
 
 			printf "\n      %s%s " $DEFAULT "$baseFileName"
 
@@ -266,26 +293,33 @@ function checkForAndUploadPiResource {
 					printf "%sERROR%s - curl exit code %s (tip - use 'man curl' to look it up)" $RED $DEFAULT $curlExitCode
 				fi
 			fi
-		fi
-	done
+		done
+	fi
 }
 
-function checkForAndUploadFTP {
+function UploadToFTP {
 
-	# Variable which is set to zero after the first upload, so the header is only printed out to screen the once.
-	firstFtpUpload=1
+	#define an array to capture file names to be uploaded to users custom FTP server
+	filesFTP=()
 
+	#identify files with the third charactor set to Y	
 	for file in /home/pi/WarDriving/logs/compressed/*
 	do
 		baseFileName=$(basename "$file")
-		baseFileNameWithoutFlags="${baseFileName:4}"  #base filename with the first 3 Flags and dot removed.
-
-		#identify files with the third charactor set to Y
 		if [[ ${baseFileName:2:1} == "Y" ]]; then
-			if [ $firstFtpUpload -eq 1 ]; then
-				printf "\n%sUploading file to %s%s%s:" $MAGENTA $BLUE$UNDERLINE "$ftpHost" $MAGENTA
-				let firstFtpUpload=0
-			fi
+			filesFTP+=("$file")
+		fi
+	done
+	
+	if [ ${#filesFTP[@]} -ne 0 ]; then            # Check if the array is empty, true if non-zero returned.		
+		printf "\n%sUploading %s%i%s files to %s%s%s:" $MAGENTA $YELLOW$UNDERLINE ${#filesFTP[@]} $MAGENTA $BLUE$UNDERLINE "$ftpHost" $MAGENTA
+	
+		# Upload files to FTP Server
+		for file in "${filesFTP[@]}"
+		do	
+
+			baseFileName=$(basename "$file")
+			baseFileNameWithoutFlags="${baseFileName:4}"  #base filename with the first 3 Flags and dot removed.
 
 			printf "\n      %s%s " $DEFAULT "$baseFileName"
 
@@ -293,15 +327,15 @@ function checkForAndUploadFTP {
 			if curl  --silent --connect-timeout $ftpConnectTimeout --max-time 60 --upload-file "$file" --user $ftpUser:$ftpPassword $ftpHost$ftpRemoteDirectory"$baseFileNameWithoutFlags"; then
 				printf "%sSUCCESS" $GREEN
 
-				#rename file to replace the second flag with an N flag
+				#rename file to replace the third flag with an N flag
 				newBaseFileName="${baseFileName:0:2}N${baseFileName:3}"
 				mv -f "$file" "$(dirname "$file")"/"$newBaseFileName"
 			else
 				curlExitCode=$?
 				printf "%sERROR%s - FTP upload failed, curl exit code %s (tip - use 'man curl' to look it up)" $RED $DEFAULT $curlExitCode
 			fi
-		fi
-	done
+		done
+	fi
 }
 
 ###########################
@@ -410,7 +444,7 @@ do
 		# uuid=$(< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 		uuid=$RANDOM
 		#create the tar gzip file.
-		tar -czf /home/pi/WarDriving/logs/compressed/"$flag.$mac.$(date +%s).$uuid".car..tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
+		tar -czf /home/pi/WarDriving/logs/compressed/"$flag.$mac.$(date +%s).$uuid".tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
 
 		#remove the pre processed files
 		rm -rf /home/pi/WarDriving/logs/preprocessed/*
@@ -426,9 +460,9 @@ do
 	printf "\n%sChecking for Internet Connection:  " $MAGENTA
 	if checkOnline; then
 		printf "%sSUCCESS%s - Internet connection available"  $GREEN $DEFAULT
-		checkForAndUploadWigle
-		checkForAndUploadPiResource
-		checkForAndUploadFTP
+		UploadToWigle
+		UploadToPiResource
+		UploadToFTP
 	else
 		printf "%sFAILURE%s - Internet connection NOT available"  $RED $DEFAULT
 	fi
