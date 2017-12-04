@@ -4,20 +4,12 @@ Please check out http://www.pi-resource.com/?page_id=378 for full details of thi
 
 Script to automate the uploading of Kismet WarDriving logs.
 
-The Following actions are performed:
-  1. Check directory structure exists, if it doesn't, create it
-  2. Stop kismet server to force it to write out the log files
-  3. Move kismet log files to an alternative directory
-  4. Start Kismet Server
-  5. Check is any files require compression, if so, compress them
-  6. Check if we have files to upload and an internet connection. If so, upload them
-  8. Check disk space, delete old logs if running low
-  9. Wait a set amount of time before restarting this script
-
-The script can be configured to upload the data to:
+The script can be configured to upload to:
   1. https://www.wigle.net/
   2. http://www.pi-resource.com/
   3. An FTP server specified by you
 
+Supports UPS (ModMyPi ups-pico) to enable the uploading of data and the safe shutdown of the Pi following removal of the primary power source. Details of the UPS supported can be found here: https://www.modmypi.com/raspberry-pi/power-1051/ups-boards-1051/ups-pico
+
 Changes since last version:
-  1. Uploads to wigle.net are now verified
+  1. UPS support added
