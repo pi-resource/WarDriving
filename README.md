@@ -19,6 +19,6 @@ The script can be configured to upload the data to:
   2. http://www.pi-resource.com/
   3. An FTP server specified by you
 
-Changes since last version
+Changes since last version:
 User configuration separated out from main bash script. Configuration file - WarDriving.cfg
 An example config file is provided in WarDriving.cfg.example
