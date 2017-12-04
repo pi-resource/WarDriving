@@ -15,46 +15,8 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-# Version: 1.0
-# Date: 2017-05-17
-
-############
-# Settings #
-############
-#
-#
-# Number of seconds the script pauses when it is started, to enable the GPS to get a fix.
-timerGps=10
-# Once running, the number of seconds before Kismet Server is restarted, log files compressed and an attempt to upload them is made.
-timerRepeat=60
-#
-# Do you wish to upload your War Driving logs to Wigle? 0=No, 1=YES.
-# If files are uploaded and the username and password are not correct or do not exist, then the data will be uploaded anonymously.
-wigleUpload=1
-wigleUserName=
-wiglePassword=
-#
-# Do you wish to upload your War Driving logs to Pi-Resource? 0=No, 1=YES.
-piResourceUpload=1
-#
-# Do you wish to upload your War Driving logs to an FTP server of your choosing? 0=No, 1=YES.
-# If yes, then the following settings need to be completed
-ftpUpload=0
-ftpHost=
-ftpRemoteDirectory=/
-ftpUser=
-ftpPassword=
-ftpConnectTimeout=3
-#
-# Delete files once they have been uploaded
-#	1 = yes
-#	2 = No
-deleteAfterUpload=1
-#
-# This script will delete the oldest wardriving files even if they havent been uploaded once the disk space utilisation reaches a specified percentage.
-# Default is set to 95%, once more than 95% of the disk has been used then war driving output files will be deleted
-filesystem=/dev/root
-filesystemUsedSpaceLimit=95
+# Version: 1.1
+# Date: 2017-11-15
 
 #############
 # Constants #
@@ -144,8 +106,8 @@ function displayIntro {
 	printf "\n%sIt uses Kismet to log WiFi hotspots. After a set amount of time Kismet is restarted which forces Kismet to write its log files." $DEFAULT
 	printf "\n%sOnce the Kismet Server has restarted, the war driving files from the previous instance are compressed an attempt made to upload them." $DEFAULT
 	printf "\n%sAny Comments, questions or suggested improvements, please visit %s%shttp://www.pi-resource.com" $DEFAULT $BLUE $UNDERLINE
-	printf "\n%sVersion: 1.0" $DEFAULT
-	printf "\n%sRelease date: 2017-05-17" $DEFAULT
+	printf "\n%sVersion: 1.1" $DEFAULT
+	printf "\n%sRelease date: 2017-11-15" $DEFAULT
 }
 
 # Prints the configuration out to screen.
@@ -346,6 +308,17 @@ function checkForAndUploadFTP {
 # Start of main programme #
 ###########################
 
+# Load configuration file
+cfg_file="WarDriving.cfg"
+if [ -f "$cfg_file" ]
+then
+	source "$cfg_file"
+else
+	printf "%sERROR%s - Configuration file not found. Expecting %s/%s" $RED $DEFAULT $PWD $cfg_file
+	printf "\nExiting ...\n"
+	exit 1
+fi
+
 ####################
 # 0. Display Intro #
 ####################
@@ -355,7 +328,7 @@ displayConfig
 
 # Initial Sleep to allow GPS to gain a fix. Suggest 60 seconds.
 printf '\n'
-countDown $timerGps $DEFAULT"Waiting" "seconds before starting Kismet server to allow the GPS a chance to get a fix"
+countDown $timerGps $DEFAULT"Waiting" "seconds before starting Kismet server to allow the GPS a chance to get a fix    "
 
 # Start infinite loop with no exit conditions.
 while :
@@ -437,7 +410,7 @@ do
 		# uuid=$(< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 		uuid=$RANDOM
 		#create the tar gzip file.
-		tar -czf /home/pi/WarDriving/logs/compressed/"$flag.$mac.$(date +%s).$uuid".tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
+		tar -czf /home/pi/WarDriving/logs/compressed/"$flag.$mac.$(date +%s).$uuid".car..tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
 
 		#remove the pre processed files
 		rm -rf /home/pi/WarDriving/logs/preprocessed/*
