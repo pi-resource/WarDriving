@@ -1,0 +1,14 @@
+v1.2
+Verification added to check that files marked for upload to wigle.net are successfully uploaded. Previously, the script was unable to detect if wigle.net reported an error and therefore the script assumed that all attempts were successful. Now, if an error occurs during the upload the files status will not be updated. This means that repeated attempts to upload it will be made until it is successful, or the file deleted due to the archiving settings.
+
+v1.1
+Configuration removed from main bash script and placed in a separate file - WarDriving.cfg
+This spares the user from having to re-enter their configuration details into the main bash script every time they upgrade or change versions.
+An example configuration file is provided - WarDriving.cfg.example
+If the user does not have an existing WarDriving.cfg file (i.e. first download and not an upgrade), then they should edit the example file before renaming it to WarDriving.cfg (i.e. cp WarDriving.cfg.example WarDriving.cfg)
+
+v1.0
+Initial public release
+
+v0.1 - v0.6
+Development and private use/testing 
