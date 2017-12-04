@@ -23,6 +23,7 @@
 #############
 DEFAULT=$'\e[0m'
 BOLD=$'\e[1m'
+ITALIC=$'\e[3m'
 UNDERLINE=$'\e[4m'
 RED=$'\e[0;91m'
 GREEN=$'\e[0;92m'
@@ -70,6 +71,111 @@ function checkOnline {
 	return 1
 }
 
+# Checks to see if the UPS is available and if the Pi is on Battery Power
+# input: Variable name which the result will be returned in as bash can only otherwise return a 1 or 0
+#
+# output: 	0 = UPS not found or not enabled
+#         	1 = Mains Power on
+#         	2 = Battery Power
+#			3 = Unknown status returned
+function upsCheckStatus {
+	
+	# enable function to accept a variable name as part of its command line and then set that variable to the result of the function.
+    local  __resultvar=$1
+
+	#i2c Bus settings for the UPS
+	i2cBus=1
+	chipAddress=0x69
+	dataAddress=0x00
+
+	if i2cget -y $i2cBus $chipAddress $dataAddress b > /dev/null; then
+		# UPS is available
+			
+		response=$(i2cget -y $i2cBus $chipAddress $dataAddress b)
+
+		if [ $response == 0x01 ]; then
+			#UPS is running on mains power
+			local UpsStatus=1
+		elif [ $response == 0x02 ]; then
+			#UPS is running on battery power
+			local UpsStatus=2
+		else		
+			#UPS returned an unknown value.
+			local UpsStatus=3
+		fi
+	else
+		# UPS not found
+		local UpsStatus=0
+	fi
+	
+	eval $__resultvar="'$UpsStatus'"
+}
+
+# Turns the user LEDs on and off.
+# input:	$1 - orange, green, blue, all
+#			$2 - on, off
+function upsLedController {
+	
+	if [[ ($1 == 'orange' || $1 == 'all') && $2 == 'on' ]]; then
+		i2cset -y 1 0x6b 0x09 0x01
+	fi
+	if [[ ($1 == 'orange' || $1 == 'all') && $2 == 'off' ]]; then
+		i2cset -y 1 0x6b 0x09 0x00
+	fi
+	if [[ ($1 == 'green' || $1 == 'all') && $2 == 'on' ]]; then
+		i2cset -y 1 0x6b 0x0A 0x01 
+	fi
+	if [[ ($1 == 'green' || $1 == 'all') && $2 == 'off' ]]; then
+		i2cset -y 1 0x6b 0x0A 0x00
+	fi
+	if [[ ($1 == 'blue' || $1 == 'all') && $2 == 'on' ]]; then
+		i2cset -y 1 0x6b 0x0b 0x01
+	fi
+	if [[ ($1 == 'blue' || $1 == 'all') && $2 == 'off' ]]; then
+		i2cset -y 1 0x6b 0x0b 0x00
+	fi
+}
+
+# Configures the UPS
+# input:	$1 - Design type: Stack, TopEnd or Plus
+#			$2 - Battery type: LF or LP
+function upsConfigure {
+
+	printf "\n%sConfiguring UPS:%s %s%s %s%s" $MAGENTA $DEFAULT $YELLOW$BOLD$UNDERLINE$1 $DEFAULT $YELLOW$BOLD$UNDERLINE$2 $DEFAULT
+	if ([ $1 == 'Stack' ] || [ $1 == 'TopEnd' ]) && [ $2 == 'LF' ]; then
+		if i2cset -y 1 0x6b 0x07 0x46; then
+			printf "%s Success" $GREEN
+		else
+			printf "%s Error. Disabling UPS functionality" $RED
+			upsInstalled=0	
+		fi
+	elif ([ $1 == 'Stack' ] || [ $1 == 'TopEnd' ]) && [ $2 == 'LP' ]; then
+		if i2cset -y 1 0x6b 0x07 0x53; then
+			printf "%s Success" $GREEN
+		else
+			printf "%s Error. Disabling UPS functionality" $RED
+			upsInstalled=0	
+		fi
+ 	elif [ $1 == 'Plus' ] && [ $2 == 'LF' ]; then
+		if i2cset -y 1 0x6b 0x07 0x51; then
+			printf "%s Success" $GREEN
+		else
+			printf "%s Error. Disabling UPS functionality" $RED
+			upsInstalled=0	
+		fi	
+ 	elif [ $1 == 'Plus' ] && [ $2 == 'LP' ]; then
+		if i2cset -y 1 0x6b 0x07 0x50; then
+			printf "%s Success" $GREEN
+		else
+			printf "%s Error. Disabling UPS functionality" $RED
+			upsInstalled=0	
+		fi  	
+	fi
+	
+	# Disable auto shutdown after a set time period. i.e. run for as long as possible until the LP Battery = 3.4v or LF Battery = 2.8v
+	i2cset -y 1 0x6b 0x01 0xff	
+}
+	
 # Check if Kismet Server is running
 # returns: 0 if running
 #          1 if not running
@@ -185,12 +291,54 @@ function displayConfig {
 
 	printf "\n%s    Files to be deleted after upload? "  $DEFAULT
 	if [ $deleteAfterUpload -eq 1 ]; then
-		printf "%s%s%sYES" $YELLOW $BOLD $UNDERLINE
+		printf "%sYES" $YELLOW$BOLD$UNDERLINE
 	else
-		printf "%s%s%sNO" $YELLOW $BOLD $UNDERLINE
+		printf "%sNO" $YELLOW$BOLD$UNDERLINE
 	fi
-
 	printf "\n%s    Files will be deleted even if not uploaded once used disk space exceeds: %s%s%s%s%s %%"  $DEFAULT $YELLOW $BOLD $UNDERLINE "$filesystemUsedSpaceLimit" $DEFAULT
+	
+	printf "\n%s    UPS Installed? " $DEFAULT
+	if [ $upsInstalled -eq 1 ]; then	
+		printf "%sYES" $YELLOW$BOLD$UNDERLINE
+		printf "\n%s        -- Number of upload attempts to be made when primary power is removed: %s%i" $DEFAULT $YELLOW$BOLD$UNDERLINE $upsMaxUploadAttempts
+		printf "\n%s        -- Pause between upload attempts: %s%i%s Second(s)" $DEFAULT $YELLOW$BOLD$UNDERLINE $upsTimeBetweenUploadAttempts $DEFAULT
+		printf "\n%s        -- UPS Type: " $DEFAULT
+		if [ $upsType != 'Stack' ] && [ $upsType != 'TopEnd' ] && [ $upsType != 'Plus' ]; then 	
+			printf "%sERROR%s - Check configuration file. Allowed types are: Stack, TopEnd, Plus" $RED $DEFAULT
+		else
+			printf "%s%s" $YELLOW$BOLD$UNDERLINE $upsType
+		fi
+		printf "\n%s        -- Battry Type: " $DEFAULT 		
+		if [ $upsBatteryType != 'LF' ] && [ $upsBatteryType != 'LP' ]; then
+			printf "%sERROR%s - Check configuration file. Allowed types are: LF, LP" $RED $DEFAULT
+		else
+			printf "%s%s" $YELLOW$BOLD$UNDERLINE $upsBatteryType
+		fi
+		printf $DEFAULT
+		printf "\n%s        Orange LED will be lit when Kismet is running." $ITALIC
+		printf "\n%s        Green LED will be lit if an internet connection were available last time it checked." $ITALIC
+		printf "\n%s        Blue LED will be lit when files are being uploaded." $ITALIC
+	else
+		printf "%sNO" $YELLOW$BOLD$UNDERLINE
+	fi
+}
+
+function countFilesForUpload {
+	# enable function to accept a variable name as part of its command line and then set that variable to the result of the function.
+    local  __resultvar=$1
+
+	local counter=0
+	
+	#identify files with the first charactor set to Y
+	for file in /home/pi/WarDriving/logs/compressed/*; do
+		[ -f "$file" ] || continue								# Checks that file isn't empty, as the for do loop will still go round once.
+		baseFileName=$(basename "$file")
+		if [ ${baseFileName:0:1} == "Y" ] || [ ${baseFileName:1:1} == "Y" ] || [ ${baseFileName:2:1} == "Y" ]; then
+			((++counter))
+		fi
+	done
+
+	eval $__resultvar="'$counter'"
 }
 
 function UploadToWigle {
@@ -202,8 +350,7 @@ function UploadToWigle {
 	filesWigle=()
 
 	#identify files with the first charactor set to Y
-	for file in /home/pi/WarDriving/logs/compressed/*
-	do
+	for file in /home/pi/WarDriving/logs/compressed/*; 	do
 		baseFileName=$(basename "$file")
 		if [[ ${baseFileName:0:1} == "Y" ]]; then
 			filesWigle+=("$file")
@@ -226,12 +373,11 @@ function UploadToWigle {
 		fi
 
 		# Upload files to Wigle
-		for file in "${filesWigle[@]}"
-		do
+		for file in "${filesWigle[@]}"; do
 			baseFileName=$(basename "$file")
 			
 			if [ $firstWigleUpload -eq 1 ]; then 
-				printf "\n%sUploading %s%s%i%s files to Wigle:" $MAGENTA $YELLOW $UNDERLINE ${#filesWigle[@]} $MAGENTA
+				printf "\n%sUploading %s%s%i%s file(s) to Wigle:" $MAGENTA $YELLOW $UNDERLINE ${#filesWigle[@]} $MAGENTA
 				let firstWigleUpload=0
 			fi
 						
@@ -258,8 +404,7 @@ function UploadToPiResource {
 	filesPiResource=()
 
 	#identify files with the second charactor set to Y	
-	for file in /home/pi/WarDriving/logs/compressed/*
-	do
+	for file in /home/pi/WarDriving/logs/compressed/*; do
 		baseFileName=$(basename "$file")
 		if [[ ${baseFileName:1:1} == "Y" ]]; then
 			filesPiResource+=("$file")
@@ -267,11 +412,10 @@ function UploadToPiResource {
 	done
 		
 	if [ ${#filesPiResource[@]} -ne 0 ]; then            # Check if the array is empty, true if non-zero returned.		
-		printf "\n%sUploading %s%i%s files to %swww.pi-resource.com%s:" $MAGENTA $YELLOW$UNDERLINE ${#filesPiResource[@]} $MAGENTA $BLUE$UNDERLINE $MAGENTA
+		printf "\n%sUploading %s%i%s file(s) to %swww.pi-resource.com%s:" $MAGENTA $YELLOW$UNDERLINE ${#filesPiResource[@]} $MAGENTA $BLUE$UNDERLINE $MAGENTA
 		
 		# Upload files to PiResource
-		for file in "${filesPiResource[@]}"
-		do
+		for file in "${filesPiResource[@]}"; do
 		
 			baseFileName=$(basename "$file")
 			baseFileNameWithoutFlags="${baseFileName:4}"  #base file name with the first 3 Flags and dot removed.
@@ -303,8 +447,7 @@ function UploadToFTP {
 	filesFTP=()
 
 	#identify files with the third charactor set to Y	
-	for file in /home/pi/WarDriving/logs/compressed/*
-	do
+	for file in /home/pi/WarDriving/logs/compressed/*; do
 		baseFileName=$(basename "$file")
 		if [[ ${baseFileName:2:1} == "Y" ]]; then
 			filesFTP+=("$file")
@@ -312,11 +455,10 @@ function UploadToFTP {
 	done
 	
 	if [ ${#filesFTP[@]} -ne 0 ]; then            # Check if the array is empty, true if non-zero returned.		
-		printf "\n%sUploading %s%i%s files to %s%s%s:" $MAGENTA $YELLOW$UNDERLINE ${#filesFTP[@]} $MAGENTA $BLUE$UNDERLINE "$ftpHost" $MAGENTA
+		printf "\n%sUploading %s%i%s file(s) to %s%s%s:" $MAGENTA $YELLOW$UNDERLINE ${#filesFTP[@]} $MAGENTA $BLUE$UNDERLINE "$ftpHost" $MAGENTA
 	
 		# Upload files to FTP Server
-		for file in "${filesFTP[@]}"
-		do	
+		for file in "${filesFTP[@]}"; do	
 
 			baseFileName=$(basename "$file")
 			baseFileNameWithoutFlags="${baseFileName:4}"  #base filename with the first 3 Flags and dot removed.
@@ -342,6 +484,11 @@ function UploadToFTP {
 # Start of main programme #
 ###########################
 
+upsUploadAttempts=0	
+
+# Display Intro
+displayIntro
+
 # Load configuration file
 cfg_file="WarDriving.cfg"
 if [ -f "$cfg_file" ]
@@ -353,15 +500,42 @@ else
 	exit 1
 fi
 
-####################
-# 0. Display Intro #
-####################
-displayIntro
+# Display Configuration
 printf '\n'
 displayConfig
 
-# Initial Sleep to allow GPS to gain a fix. Suggest 60 seconds.
-printf '\n'
+# If UPS is enabled, check it is working.
+# If it is enabled but not working, then the function sets the 'upsInstalled' variable to 0 to prevent furter attempts.
+if [ $upsInstalled -eq 1 ]; then
+	printf '\n'
+	printf "\n%sChecking UPS status: " $MAGENTA
+	upsCheckStatus result
+	if [ $result -eq 1 ]; then
+		#UPS is running on mains power
+		printf " %sUPS is running on mains power" $GREEN
+	elif [ $result -eq 2 ]; then
+		#UPS is running on battery power
+		printf " %sUPS is running on battery power" $YELLOW	
+	elif [ $result -eq 3 ]; then
+		printf " %sERROR%s - UPS returned an unknown value of %s. Therefore disabling UPS functionality." $RED $DEFAULT $response
+		upsInstalled=0
+	elif [ $result -eq 0 ]; then
+		printf " %sERROR%s - UPS not found. Therefore disabling UPS functionality." $RED $DEFAULT $response
+		upsInstalled=0
+	fi
+
+	if [ $upsInstalled -eq 1 ]; then
+		printf "\n%sTesting user LED's:%s Turning all user LED's on for 3 seconds" $MAGENTA $DEFAULT
+		upsLedController all on
+		sleep 3
+		upsLedController all off
+	
+		#Configure UPS with battery type and run time.
+		upsConfigure $upsType $upsBatteryType
+	fi
+fi
+
+# Pause to allow GPS to gain a fix.
 countDown $timerGps $DEFAULT"Waiting" "seconds before starting Kismet server to allow the GPS a chance to get a fix    "
 
 # Start infinite loop with no exit conditions.
@@ -390,6 +564,11 @@ do
 	else
 		printf "%sDONE%s - Kismet Server was not running" $GREEN $DEFAULT
 	fi
+	
+	#If UPS is installed, turn off Orange LED to show kismet has been stopped.
+	if [ $upsInstalled -eq 1 ]; then
+		upsLedController orange off
+	fi	
 
 	####################################################################################################################
 	# 3. Move kismet log files to an alternative directory so that they can be processed whilst Kismet Server restarts #
@@ -407,14 +586,26 @@ do
 	# 4. Start kismet server #
 	##########################
 	printf "\n%sStarting Kismet Server: %s" $MAGENTA $DEFAULT
-    sudo kismet_server -s -p /home/pi/WarDriving/logs/kismet > /dev/null &
-	sleep 1
-	if checkKismetRunning; then
-		printf "%sSUCCESS%s - Kismet Server Started" $GREEN $DEFAULT
-	else
-		printf "%sERROR%s - Unable to start Kismet, check kismet logs" $RED $DEFAULT
-	fi
 
+	upsCheckStatus result
+	if [ $result -eq 2 ]; then
+		printf "%sWARNING%s - Pi is running on UPS battery power. Therefore not starting Kismet." $YELLOW $DEFAULT
+	else	
+		# under all other conditions, i.e. no UPS, unknown value returned, or mains power, then proceed to start Kismet
+		sudo kismet_server -s -p /home/pi/WarDriving/logs/kismet > /dev/null &
+		sleep 1
+		if checkKismetRunning; then
+			printf "%sSUCCESS%s - Kismet Server Started" $GREEN $DEFAULT
+			
+			#If UPS is installed, turn on Orange LED to show that kismet is running
+			if [ $upsInstalled -eq 1 ]; then
+				upsLedController orange on
+			fi	
+		else
+			printf "%sERROR%s - Unable to start Kismet, check kismet logs" $RED $DEFAULT
+		fi
+	fi
+	
 	##########################################################################
 	#  5. Check if any files that require compression, if so, compress files #
 	##########################################################################
@@ -457,14 +648,50 @@ do
 	#########################################################################
 	# 6. Check for an internet connection before attempting to upload files #
 	#########################################################################
-	printf "\n%sChecking for Internet Connection:  " $MAGENTA
-	if checkOnline; then
-		printf "%sSUCCESS%s - Internet connection available"  $GREEN $DEFAULT
-		UploadToWigle
-		UploadToPiResource
-		UploadToFTP
-	else
-		printf "%sFAILURE%s - Internet connection NOT available"  $RED $DEFAULT
+
+	printf "\n%sNumber of files that require uploading: " $MAGENTA	
+	countFilesForUpload numFilesForUpload
+	printf "%s%i" $GREEN $numFilesForUpload
+	
+	printf "\n%sChecking UPS status: " $MAGENTA
+	upsCheckStatus result
+	if [ $result -eq 2 ]; then
+		#UPS is running on battery power, therefore increment counter
+		((++upsUploadAttempts))
+		printf "%sPi is running on UPS battery. This is attempt %i of %i before the Pi will be shut down." $YELLOW	$upsUploadAttempts $upsMaxUploadAttempts
+	else 
+		#Pi is running on Primary power supply, therefore reset  counter
+		printf "%sPi is running on Primary power supply." $GREEN	
+		let upsUploadAttempts=0
+	fi
+	
+	if [ $numFilesForUpload -gt 0 ]; then
+		printf "\n%sChecking for Internet Connection:  " $MAGENTA
+		if checkOnline; then
+			printf "%sSUCCESS%s - Internet connection available"  $GREEN $DEFAULT
+			
+			#If UPS is installed, turn on Green LED to show internet connection is available, and Blue LED to show uploads have started.
+			if [ $upsInstalled -eq 1 ]; then
+				upsLedController green on
+				upsLedController blue on				
+			fi
+			
+			UploadToWigle
+			UploadToPiResource
+			UploadToFTP
+			
+			#If UPS is installed, turn off Blue LED to show uploads have finished
+			if [ $upsInstalled -eq 1 ]; then
+				upsLedController blue off				
+			fi			
+
+		else
+			printf "%sFAILURE%s - Internet connection NOT available"  $RED $DEFAULT
+			#If UPS is installed, turn off Green LED to show internet connection not available
+			if [ $upsInstalled -eq 1 ]; then
+				upsLedController green off
+			fi
+		fi
 	fi
 
 	######################################################################################
@@ -475,8 +702,7 @@ do
 		printf "\n%sThe following files are identified for deletion:" $MAGENTA
 
 		#identify files with all flags (first 3 charactors) set to NNN
-		for file in /home/pi/WarDriving/logs/compressed/*
-		do
+		for file in /home/pi/WarDriving/logs/compressed/*; do
 			baseFileName=$(basename "$file")
 			if [[ ${baseFileName:0:3} == "NNN" ]]; then
 				printf "\n      %s%s" $DEFAULT "$baseFileName"
@@ -520,6 +746,24 @@ do
 	#########################################
 	# 9. Wait before restarting this script #
 	#########################################
-	countDown $timerRepeat $DEFAULT"Waiting" "seconds before restarting the cycle     "
-
+	countFilesForUpload numFilesForUpload
+	upsCheckStatus result	
+	if [ $result -eq 2 ]; then
+		printf "\n%sChecking UPS Status: %sThe Pi is running on the UPS battery" $MAGENTA $DEFAULT	
+		if [ $upsUploadAttempts -ge $upsMaxUploadAttempts ]; then
+			printf "\n%sThe maximum number of upload attempts has been exceeded. Therefore shutting down.\n" $DEFAULT
+			i2cset -y 1 0x6b 0x00 0xcc
+			exit
+		elif [ $numFilesForUpload -eq 0 ]; then
+			printf "\n%sThere are no more files to be uploaded. Therefore shutting down.\n" $DEFAULT
+			i2cset -y 1 0x6b 0x00 0xcc
+			exit
+		else
+			printf "\n%sThe maximum number of upload attempts has not been exceeded and there are still files to be uploaded." $DEFAULT
+			countDown $upsTimeBetweenUploadAttempts $DEFAULT"Waiting" "seconds before re-trying to upload files      "			
+		fi
+	else 	
+		#UPS is not installed or the Pi is using its Primary powersource, therefore continue as normal.
+		countDown $timerRepeat $DEFAULT"Waiting" "seconds before restarting the cycle     "
+	fi
 done

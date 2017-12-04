@@ -1,3 +1,14 @@
+v1.3
+Added support for a UPS. (Uninterruptible Power Supply)
+This addresses two concerns which are best illustrated when the War Driving rig is installed in a car. On arrival at the destination the ignition is typically turned off very soon after the car stops and this results in:
+ - Unsafe shutdown for the Pi - risking corrupting the SD card, and losing some of the WiFi data collected in the most recent session.
+ - Insufficient time available to upload the data.
+Utilising a UPS enables the Pi to continue to operate once the primary power source has been removed. The current Kismet session will safely end, keeping the most recent WiFi survey and enabling a number of attempts to be made to upload the data. If the UPS battery begins to deplete, or the number of upload attempts exceeds a specified limit, the Pi is safely shutdown.
+
+UPS supported: ModMyPi UPS PIco - Uninterruptible Power Supply & I2C Control HAT.
+
+https://www.modmypi.com/raspberry-pi/power-1051/ups-boards-1051/ups-pico 
+
 v1.2
 Verification added to check that files marked for upload to wigle.net are successfully uploaded. Previously, the script was unable to detect if wigle.net reported an error and therefore the script assumed that all attempts were successful. Now, if an error occurs during the upload the files status will not be updated. This means that repeated attempts to upload it will be made until it is successful, or the file deleted due to the archiving settings.
 

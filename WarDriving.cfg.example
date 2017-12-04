@@ -4,7 +4,7 @@
 #
 #
 # Number of seconds the script pauses when it is started, to enable the GPS to get a fix.
-timerGps=10
+timerGps=1
 #
 # Once running, the number of seconds before Kismet Server is restarted, log files compressed and an attempt to upload them is made.
 timerRepeat=60
@@ -27,12 +27,30 @@ ftpUser=
 ftpPassword=
 ftpConnectTimeout=3
 #
-# Delete files once they have been uploaded
-#	1 = yes
-#	2 = No
+# Delete files once they have been uploaded?  0=No, 1=YES.
 deleteAfterUpload=1
 #
 # This script will delete the oldest wardriving files even if they havent been uploaded once the disk space utilisation reaches a specified percentage.
 # Default is set to 95%, once more than 95% of the disk has been used then war driving output files will be deleted
 filesystem=/dev/root
 filesystemUsedSpaceLimit=95
+#
+# UPS Configuration (Uninterruptible Power Supply)
+# This script is designed to work with the ModMyPi UPS PIco - Uninterruptible Power Supply & I2C Control HAT. The UPS can keep the Pi running for many hours depending on the battery size installed within the UPS.
+# https://www.modmypi.com/raspberry-pi/power-1051/ups-boards-1051/ups-pico
+# 
+# Once the mains power has been removed from the Pi. (i.e. The Pi is installed in a car and you've just arrived home and turned the ignition off)
+# the UPS will keep the Pi powered so that a predefined number of attempts can be made to upload your data. Once all the data has been uploaded,
+# or the number of predefined attempts exceeded, the Pi is then safely shut down.
+#
+# Settings:
+#    upsInstalled? 0=No, 1=Yes.
+#	 upsType? Stack, TopEnd, Plus
+#	 upsBatteryType? LP or LF
+#    upsMaxUploadAttempts? The number of times the script should attempt to upload files to Wgile, PiResource & FTP. Recommend 10. If you've parked at the shops rather than at home then you'll not be connected to your Home WiFi so there is no point in trying to many times!
+#    upsTimeBetweenUploadAttempts? The number of seconds between each upload attempt. It may take a while for the Pi to connect to your home WiFi so we don't want to quit straight away, but rather, pause and then try if the previous attempt failed.
+upsInstalled=0
+upsType=Stack
+upsBatteryType=LP
+upsMaxUploadAttempts=10
+upsTimeBetweenUploadAttempts=10
