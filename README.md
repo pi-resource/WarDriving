@@ -4,6 +4,9 @@ Please check out http://www.pi-resource.com/?page_id=378 for full details of thi
 
 Script to automate the uploading of Kismet WarDriving logs.
 
+User configuration separated out from main bash script. Configuration file - WarDriving.cfg
+An example config file is provided in WarDriving.cfg.example
+
 The Following actions are performed:
   1. Check directory structure exists, if it doesn't, create it
   2. Stop kismet server to force it to write out the log files
