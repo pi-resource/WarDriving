@@ -22,4 +22,5 @@ The script can be configured to upload the data to:
 Changes since last version:
 
 User configuration separated out from main bash script. Configuration file - WarDriving.cfg
+
 An example config file is provided in WarDriving.cfg.example
