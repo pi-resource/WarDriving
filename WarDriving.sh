@@ -15,7 +15,7 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-VERSION='1.3.1'
+VERSION='1.3.2'
 RELEASE_DATE='2017-12-06'
 
 #############
@@ -492,12 +492,12 @@ upsUploadAttempts=0
 displayIntro
 
 # Load configuration file
-cfg_file="WarDriving.cfg"
-if [ -f "$cfg_file" ]
+# Load configuration file
+if [ -f ~/WarDriving/WarDriving.cfg ]
 then
-	source "$cfg_file"
+	source ~/WarDriving/WarDriving.cfg
 else
-	printf "%sERROR%s - Configuration file not found. Expecting %s/%s" $RED $DEFAULT $PWD $cfg_file
+	printf "\n%sERROR%s - Configuration file not found. Expecting ~/WarDriving/WarDriving.cfg" $RED $DEFAULT
 	printf "\nExiting ...\n"
 	exit 1
 fi

@@ -1,3 +1,6 @@
+v1.3.2
+- Bug Fix - failed to load configuration file if script was not started from within its home directory
+
 v1.3.1
 - Compatibility added for Raspbian Stretch.
 - Fixed bug that resulted in the reporting of the wrong version number.
