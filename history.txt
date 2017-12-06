@@ -1,3 +1,8 @@
+v1.3.1
+- Compatibility added for Raspbian Stretch.
+- Fixed bug that resulted in the reporting of the wrong version number.
+- Fixed bug that even when UPS was disabled in configuration - the script would still attempt to use the UPS if one were installed. 
+
 v1.3
 Added support for a UPS. (Uninterruptible Power Supply)
 This addresses two concerns which are best illustrated when the War Driving rig is installed in a car. On arrival at the destination the ignition is typically turned off very soon after the car stops and this results in:
@@ -19,7 +24,7 @@ An example configuration file is provided - WarDriving.cfg.example
 If the user does not have an existing WarDriving.cfg file (i.e. first download and not an upgrade), then they should edit the example file before renaming it to WarDriving.cfg (i.e. cp WarDriving.cfg.example WarDriving.cfg)
 
 v1.0
-Initial public release
+Initial public release.
 
 v0.1 - v0.6
 Development and private use/testing 
