@@ -4,7 +4,7 @@
 #
 #
 # Number of seconds the script pauses when it is started, to enable the GPS to get a fix.
-timerGps=1
+timerGps=10
 #
 # Once running, the number of seconds before Kismet Server is restarted, log files compressed and an attempt to upload them is made.
 timerRepeat=60
