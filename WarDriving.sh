@@ -15,8 +15,8 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-# Version: 1.2
-# Date: 2017-11-15
+VERSION='1.3.1'
+RELEASE_DATE='2017-12-06'
 
 #############
 # Constants #
@@ -88,7 +88,9 @@ function upsCheckStatus {
 	chipAddress=0x69
 	dataAddress=0x00
 
-	if i2cget -y $i2cBus $chipAddress $dataAddress b > /dev/null; then
+	if [ $upsInstalled -ne 1 ]; then
+		local UpsStatus=0
+	elif i2cget -y $i2cBus $chipAddress $dataAddress b > /dev/null 2>&1; then
 		# UPS is available
 			
 		response=$(i2cget -y $i2cBus $chipAddress $dataAddress b)
@@ -180,7 +182,7 @@ function upsConfigure {
 # returns: 0 if running
 #          1 if not running
 function checkKismetRunning {
-	if pgrep -x "kismet_server" > /dev/null
+	if pgrep -x "kismet_server" > /dev/null 2>&1
 	then
 	    return 0
 	else
@@ -212,8 +214,8 @@ function displayIntro {
 	printf "\n%sIt uses Kismet to log WiFi hotspots. After a set amount of time Kismet is restarted which forces Kismet to write its log files." $DEFAULT
 	printf "\n%sOnce the Kismet Server has restarted, the war driving files from the previous instance are compressed an attempt made to upload them." $DEFAULT
 	printf "\n%sAny Comments, questions or suggested improvements, please visit %s%shttp://www.pi-resource.com" $DEFAULT $BLUE $UNDERLINE
-	printf "\n%sVersion: 1.1" $DEFAULT
-	printf "\n%sRelease date: 2017-11-15" $DEFAULT
+	printf "\n%sVersion: %s" $DEFAULT $VERSION
+	printf "\n%sRelease date: %s" $DEFAULT $RELEASE_DATE
 }
 
 # Prints the configuration out to screen.
@@ -592,7 +594,7 @@ do
 		printf "%sWARNING%s - Pi is running on UPS battery power. Therefore not starting Kismet." $YELLOW $DEFAULT
 	else	
 		# under all other conditions, i.e. no UPS, unknown value returned, or mains power, then proceed to start Kismet
-		sudo kismet_server -s -p /home/pi/WarDriving/logs/kismet > /dev/null &
+		sudo kismet_server -s -p /home/pi/WarDriving/logs/kismet > /dev/null 2>&1 &
 		sleep 1
 		if checkKismetRunning; then
 			printf "%sSUCCESS%s - Kismet Server Started" $GREEN $DEFAULT
@@ -630,7 +632,9 @@ do
 
 		# Fetch a MAC address to use as a machine UUID. Not perfect, but good enough for this application.
 		mac=$(ifconfig | grep -m 1 -oP 'HWaddr \K.................' | sed 's/://g')
-
+		if [ -z $mac ]; then
+			mac=$(ifconfig | grep -m 1 -oP 'ether \K.................' | sed 's/://g')
+		fi
 		# Generate a random 8 character alphanumeric string (upper and lowercase)
 		# uuid=$(< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 		uuid=$RANDOM
