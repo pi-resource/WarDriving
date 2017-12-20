@@ -15,7 +15,7 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-VERSION='1.4.1'
+VERSION='1.4.2'
 RELEASE_DATE='2017-12-20'
 
 #############
@@ -556,9 +556,9 @@ countDown $timerGps $DEFAULT"Waiting" "seconds before starting Kismet server to 
 while :
 do
 
-	###############################################################
-	# 1. Check directory structur exists, if it doesn't, creat it #
-	###############################################################
+	################################################################
+	# 1. Check directory structur exists, if it doesn't, create it #
+	################################################################
 	createDirStructure
 
 	#########################
@@ -566,12 +566,19 @@ do
 	#########################
 	printf "\n%sChecking if Kismet Server is running: " $MAGENTA
 	if checkKismetRunning; then
+		killAttempts=0 #As a last resourt, if pkill doesn't work, after 60 seconds use killall -s SIGKILL 
 		printf "%sKismet Server is running, therefore killing the server. " $DEFAULT
 		sudo pkill kismet_server
 		while : ; do
 			sleep 1
+			printf "." $DEFAULT
 			if ! checkKismetRunning; then
 				break
+			fi
+			((++killAttempts))
+			if [ $killAttempts -gt 60 ]; then
+				printf "%sERROR%s - Unable to kill kismet normally. Had to send a SIGKILL command.\n" $RED $DEFAULT			
+				sudo killall -s SIGKILL kismet_server
 			fi
 		done
 		printf "%sDONE%s - Kismet Server killed" $GREEN $DEFAULT
