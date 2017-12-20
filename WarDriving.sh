@@ -15,8 +15,8 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-VERSION='1.3.2'
-RELEASE_DATE='2017-12-06'
+VERSION='1.4'
+RELEASE_DATE='2017-12-19'
 
 #############
 # Constants #
@@ -209,11 +209,11 @@ function countDown {
 
 # Prints the intro out to screen.
 function displayIntro {
-	printf "\n%s%sWarDriving by pi-resource" $RED $UNDERLINE
-	printf "\n%sThis bash script automates the collection of WarDriving data and can upload the data to %s%swww.wigle.net%s, %s%swww.pi-resource.com%s and a FTP server if configured to do so." $DEFAULT $BLUE $UNDERLINE $DEFAULT $BLUE $UNDERLINE $DEFAULT
+	printf "\n%sWarDriving by pi-resource" $RED$UNDERLINE
+	printf "\n%sThis bash script automates the collection of WarDriving data and can upload the data to %swww.wigle.net%s, %swww.pi-resource.com%s and a FTP server if configured to do so." $DEFAULT $BLUE$UNDERLINE $DEFAULT $BLUE$UNDERLINE $DEFAULT
 	printf "\n%sIt uses Kismet to log WiFi hotspots. After a set amount of time Kismet is restarted which forces Kismet to write its log files." $DEFAULT
 	printf "\n%sOnce the Kismet Server has restarted, the war driving files from the previous instance are compressed an attempt made to upload them." $DEFAULT
-	printf "\n%sAny Comments, questions or suggested improvements, please visit %s%shttp://www.pi-resource.com" $DEFAULT $BLUE $UNDERLINE
+	printf "\n%sAny Comments, questions or suggested improvements, please visit %shttp://www.pi-resource.com" $DEFAULT $BLUE$UNDERLINE
 	printf "\n%sVersion: %s" $DEFAULT $VERSION
 	printf "\n%sRelease date: %s" $DEFAULT $RELEASE_DATE
 }
@@ -221,74 +221,79 @@ function displayIntro {
 # Prints the configuration out to screen.
 function displayConfig {
 	printf "\n%s%sConfiguration" $MAGENTA $UNDERLINE
-	printf "\n%s    On start-up, pause for %s%s%s%s%s second(s) to allow the GPS to get a fix" $DEFAULT $YELLOW $BOLD $UNDERLINE $timerGps $DEFAULT
-	printf "\n%s    Save and compress logs every %s%s%s%s%s minute(s)" $DEFAULT $YELLOW $BOLD $UNDERLINE $(( timerRepeat / 60 )) $DEFAULT
-
-	printf "\n%s    Upload to %s%swww.wigle.net%s? "  $DEFAULT $BLUE $UNDERLINE $DEFAULT
+	printf "\n%s    On start-up, pause for %s%s%s second(s) to allow the GPS to get a fix" $DEFAULT $YELLOW$BOLD$UNDERLINE $timerGps $DEFAULT
+	printf "\n%s    Save and compress logs every %s%s%s minute(s)" $DEFAULT $YELLOW$BOLD$UNDERLINE $(( timerRepeat / 60 )) $DEFAULT
+	printf "\n%s    Add a friendly name to the log files?" $DEFAULT
+	if [ -z $friendlyName ]; then
+		printf " %sNO" $YELLOW$BOLD$UNDERLINE
+	else
+		printf " %sYES%s - %s%s" $YELLOW$BOLD$UNDERLINE	$DEFAULT $YELLOW$BOLD$UNDERLINE $friendlyName
+	fi
+	printf "\n%s    Upload to %swww.wigle.net%s? "  $DEFAULT $BLUE$UNDERLINE $DEFAULT
 	if [ $wigleUpload -eq 1 ]; then
-		printf "%s%s%sYES" $YELLOW $BOLD $UNDERLINE
+		printf "%sYES" $YELLOW$BOLD$UNDERLINE
 		printf "\n%s       -- Wigle User: " $DEFAULT
 		if [ -z "$wigleUserName" ] && [ -z "$wiglePassword" ]; then
-			printf "%s%s%sAnonymous%s (Wigle username and password not set)" $YELLOW $BOLD $UNDERLINE $DEFAULT
+			printf "%sAnonymous%s (Wigle username and password not set)" $YELLOW$BOLD$UNDERLINE $DEFAULT
 		elif [ -z $wigleUserName ]; then
-			printf "%s%s%sAnonymous%s (Wigle username not set)" $YELLOW $BOLD $UNDERLINE $RED
+			printf "%sAnonymous%s (Wigle username not set)" $YELLOW$BOLD$UNDERLINE $RED
 		elif [ -z $wiglePassword ]; then
-			printf "%s%s%sAnonymous%s (Wigle password not set)" $YELLOW $BOLD $UNDERLINE $RED
+			printf "%sAnonymous%s (Wigle password not set)" $YELLOW$BOLD$UNDERLINE $RED
 		else
-			printf "%s%s%s%s" $YELLOW $BOLD $UNDERLINE $wigleUserName
-			printf "\n%s       -- Wigle Password: %s%s%s********" $DEFAULT $YELLOW $BOLD $UNDERLINE
+			printf "%s%s" $YELLOW$BOLD$UNDERLINE $wigleUserName
+			printf "\n%s       -- Wigle Password: %s********" $DEFAULT $YELLOW$BOLD$UNDERLINE
 		fi
 	else
 		printf "%s%s%sNO" $YELLOW $BOLD $UNDERLINE
 	fi
 
-	printf "\n%s    Upload to %s%swww.pi-resource.com%s? "  $DEFAULT $BLUE $UNDERLINE $DEFAULT
+	printf "\n%s    Upload to %swww.pi-resource.com%s? "  $DEFAULT $BLUE$UNDERLINE $DEFAULT
 	if [ $piResourceUpload -gt 0 ]; then
-		printf "%s%s%sYES" $YELLOW $BOLD $UNDERLINE
+		printf "%sYES" $YELLOW$BOLD$UNDERLINE
 	else
-		printf "%s%s%sNO" $YELLOW $BOLD $UNDERLINE
+		printf "%sNO" $YELLOW$BOLD$UNDERLINE
 	fi
 
 	printf "\n%s    Upload to a FTP server of your choosing? " $DEFAULT
 	if [ $ftpUpload -gt 0 ]; then
-		printf "%s%s%sYES" $YELLOW $BOLD $UNDERLINE
+		printf "%sYES" $YELLOW$BOLD$UNDERLINE
 
 		printf "\n%s        -- FTP Host: " $DEFAULT
 		if [ -z "$ftpHost" ]; then
 			printf "%sERROR%s - FTP Host not set" $RED $DEFAULT
 		else
-			printf "%s%s%s%s%s" $YELLOW $BOLD $UNDERLINE $ftpHost $DEFAULT
+			printf "%s%s%s" $YELLOW$BOLD$UNDERLINE $ftpHost $DEFAULT
 		fi
 
 		printf "\n%s        -- FTP Remote Directory: " $DEFAULT
 		if [ -z "$ftpRemoteDirectory" ]; then
 			printf "%sERROR%s - FTP Remote directory not set" $RED $DEFAULT
 		else
-			printf "%s%s%s%s%s" $YELLOW $BOLD $UNDERLINE $ftpRemoteDirectory $DEFAULT
+			printf "%s%s%s" $YELLOW$BOLD$UNDERLINE $ftpRemoteDirectory $DEFAULT
 		fi
 
 		printf "\n%s        -- FTP Connection Timeout: " $DEFAULT
 		if [ -z "$ftpConnectTimeout" ]; then
 			printf "%sERROR%s - FTP Connection timeout not set" $RED $DEFAULT
 		else
-			printf "%s%s%s%s%s second(s)" $YELLOW $BOLD $UNDERLINE $ftpConnectTimeout $DEFAULT
+			printf "%s%s%s second(s)" $YELLOW$BOLD$UNDERLINE $ftpConnectTimeout $DEFAULT
 		fi
 
 		printf "\n%s        -- FTP Username: " $DEFAULT
 		if [ -z "$ftpUser" ]; then
 			printf "%sWARNING%s - FTP Username not set. will try Anonymous login" $CYAN $DEFAULT
 		else
-			printf "%s%s%s%s%s" $YELLOW $BOLD $UNDERLINE $ftpUser $DEFAULT
+			printf "%s%s%s" $YELLOW$BOLD$UNDERLINE $ftpUser $DEFAULT
 		fi
 
 		printf "\n%s        -- FTP Password: " $DEFAULT
 		if [ -z "$ftpPassword" ]; then
 			printf "%sWARNING%s - FTP Password not set" $CYAN $DEFAULT
 		else
-			printf "%s%s%s********" $YELLOW $BOLD $UNDERLINE
+			printf "%s********" $YELLOW$BOLD$UNDERLINE
 		fi
 	else
-		printf "%s%s%sNO" $YELLOW $BOLD $UNDERLINE
+		printf "%sNO" $YELLOW$BOLD$UNDERLINE
 	fi
 
 	printf "\n%s    Files to be deleted after upload? "  $DEFAULT
@@ -297,7 +302,7 @@ function displayConfig {
 	else
 		printf "%sNO" $YELLOW$BOLD$UNDERLINE
 	fi
-	printf "\n%s    Files will be deleted even if not uploaded once used disk space exceeds: %s%s%s%s%s %%"  $DEFAULT $YELLOW $BOLD $UNDERLINE "$filesystemUsedSpaceLimit" $DEFAULT
+	printf "\n%s    Files will be deleted even if not uploaded once used disk space exceeds: %s%s%s %%"  $DEFAULT $YELLOW$BOLD$UNDERLINE "$filesystemUsedSpaceLimit" $DEFAULT
 	
 	printf "\n%s    UPS Installed? " $DEFAULT
 	if [ $upsInstalled -eq 1 ]; then	
@@ -379,7 +384,7 @@ function UploadToWigle {
 			baseFileName=$(basename "$file")
 			
 			if [ $firstWigleUpload -eq 1 ]; then 
-				printf "\n%sUploading %s%s%i%s file(s) to Wigle:" $MAGENTA $YELLOW $UNDERLINE ${#filesWigle[@]} $MAGENTA
+				printf "\n%sUploading %s%i%s file(s) to Wigle:" $MAGENTA $YELLOW$UNDERLINE ${#filesWigle[@]} $MAGENTA
 				let firstWigleUpload=0
 			fi
 						
@@ -611,7 +616,7 @@ do
 	##########################################################################
 	#  5. Check if any files that require compression, if so, compress files #
 	##########################################################################
-	printf "\n%sChecking if there are kismet log files that require compression: " $MAGENTA
+	printf "\n%sChecking if there are kismet log files that require compression:%s" $MAGENTA $DEFAULT
 	let filecounter2=$(find /home/pi/WarDriving/logs/preprocessed/ -maxdepth 1 -type f | grep -cv '/\.')
 	if [ $filecounter2 -gt 0 ]; then
 
@@ -638,8 +643,14 @@ do
 		# Generate a random 8 character alphanumeric string (upper and lowercase)
 		# uuid=$(< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 		uuid=$RANDOM
-		#create the tar gzip file.
-		tar -czf /home/pi/WarDriving/logs/compressed/"$flag.$mac.$(date +%s).$uuid".tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
+		# if friendlyName is set, then add a full stop to the end of it.
+		if [ -z "$friendlyName" ]; then
+			:
+		else
+			friendlyName+="."
+		fi
+		# create the tar gzip file. 
+		env GZIP=-9 tar -czvf /home/pi/WarDriving/logs/compressed/"$flag.$friendlyName$mac.$(date +%s).$uuid".tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
 
 		#remove the pre processed files
 		rm -rf /home/pi/WarDriving/logs/preprocessed/*
