@@ -2,9 +2,12 @@
 # Settings #
 ############
 #
+# Friendly name - this isn't necessary, but if specified then the string will be added to the log filenames. If you have more than one WarDriving rig, then
+# this makes it easier to identify which WarDriving rig uploaed the data
+friendlyName=
 #
 # Number of seconds the script pauses when it is started, to enable the GPS to get a fix.
-timerGps=10
+timerGps=1
 #
 # Once running, the number of seconds before Kismet Server is restarted, log files compressed and an attempt to upload them is made.
 timerRepeat=60

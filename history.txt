@@ -1,3 +1,7 @@
+v1.4
+- GZIP compression now uses maximum compression setting, resulting in the compressed files being approx 20% smaller than before.
+- 'friendly name' option added to configuration. If set, this string is added to the log file name so that if more than one rig is generating data, a user can more easily identify which rig collected/uploaded a particular data set. 
+
 v1.3.2
 - Bug Fix - failed to load configuration file if script was not started from within its home directory
 
