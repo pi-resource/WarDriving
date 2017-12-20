@@ -1,3 +1,6 @@
+v1.4.1
+- Bug Fix - Resolved an issue which caused an additional full stop was added to the 'friendly name' everytime the script cycled.
+
 v1.4
 - GZIP compression now uses maximum compression setting, resulting in the compressed files being approx 20% smaller than before.
 - 'friendly name' option added to configuration. If set, this string is added to the log file name so that if more than one rig is generating data, a user can more easily identify which rig collected/uploaded a particular data set. 
