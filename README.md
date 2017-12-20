@@ -10,6 +10,3 @@ The script can be configured to upload to:
   3. An FTP server specified by you
 
 Supports UPS (ModMyPi ups-pico) to enable the uploading of data and the safe shutdown of the Pi following removal of the primary power source. Details of the UPS supported can be found here: https://www.modmypi.com/raspberry-pi/power-1051/ups-boards-1051/ups-pico
-
-Changes since last version:
-   Config options, able to add a 'friendly name' to the log file names so that if you have more than one rig, you can more easily identify which rig collected/uploaded the data.
