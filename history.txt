@@ -1,23 +1,23 @@
+v1.4.2
+- Bug Fix: On very rare occassions Kismet does not respond to the standard pkill command (SIGTERM). This can cause the script to hang indefinitely whilst it waits for kismet to stop running. Therefore after 60 failed attempts a SIGKILL command is sent to abruptly shut Kismet down so that the cycle can be restarted.
+
 v1.4.1
-- Bug Fix - Resolved an issue which caused an additional full stop was added to the 'friendly name' everytime the script cycled.
+- Bug Fix: Resolved an issue which caused an additional full stop was added to the 'friendly name' everytime the script cycled.
 
 v1.4
-- GZIP compression now uses maximum compression setting, resulting in the compressed files being approx 20% smaller than before.
-- 'friendly name' option added to configuration. If set, this string is added to the log file name so that if more than one rig is generating data, a user can more easily identify which rig collected/uploaded a particular data set. 
+- Optimisation: GZIP compression now uses maximum compression setting, resulting in the compressed files being approx 20% smaller than before.
+- Feature: 'friendly name' option added to configuration. If set, this string is added to the log file name so that if more than one rig is generating data, a user can more easily identify which rig collected/uploaded a particular data set. 
 
 v1.3.2
-- Bug Fix - failed to load configuration file if script was not started from within its home directory
+- Bug Fix: Configuration file failed to load if the script was not started from within its directory.
 
 v1.3.1
-- Compatibility added for Raspbian Stretch.
-- Fixed bug that resulted in the reporting of the wrong version number.
-- Fixed bug that even when UPS was disabled in configuration - the script would still attempt to use the UPS if one were installed. 
+- Compatibility: Upgraded to work with Raspbian Stretch.
+- Bug Fix:  Wrong version number reported.
+- Bug Fix:  Script would attempt to use the UPS if one were installed even if it were disabled in configuration. 
 
 v1.3
-Added support for a UPS. (Uninterruptible Power Supply)
-This addresses two concerns which are best illustrated when the War Driving rig is installed in a car. On arrival at the destination the ignition is typically turned off very soon after the car stops and this results in:
- - Unsafe shutdown for the Pi - risking corrupting the SD card, and losing some of the WiFi data collected in the most recent session.
- - Insufficient time available to upload the data.
+- Feature: Added support for a UPS. (Uninterruptible Power Supply). This addresses two concerns which are best illustrated when the War Driving rig is installed in a car. On arrival at the destination the ignition is typically turned off very soon after the car stops and this results in: (1) Unsafe shutdown for the Pi - risking corrupting the SD card, and losing some of the WiFi data collected in the most recent session. (2) Insufficient time available to upload the data.
 Utilising a UPS enables the Pi to continue to operate once the primary power source has been removed. The current Kismet session will safely end, keeping the most recent WiFi survey and enabling a number of attempts to be made to upload the data. If the UPS battery begins to deplete, or the number of upload attempts exceeds a specified limit, the Pi is safely shutdown.
 
 UPS supported: ModMyPi UPS PIco - Uninterruptible Power Supply & I2C Control HAT.
@@ -25,10 +25,10 @@ UPS supported: ModMyPi UPS PIco - Uninterruptible Power Supply & I2C Control HAT
 https://www.modmypi.com/raspberry-pi/power-1051/ups-boards-1051/ups-pico 
 
 v1.2
-Verification added to check that files marked for upload to wigle.net are successfully uploaded. Previously, the script was unable to detect if wigle.net reported an error and therefore the script assumed that all attempts were successful. Now, if an error occurs during the upload the files status will not be updated. This means that repeated attempts to upload it will be made until it is successful, or the file deleted due to the archiving settings.
+- Feature: Verification added to check that files marked for upload to wigle.net are successfully uploaded. Previously, the script was unable to detect if wigle.net reported an error and therefore the script assumed that all attempts were successful. Now, if an error occurs during the upload the files status will not be updated. This means that repeated attempts to upload it will be made until it is successful, or the file deleted due to the archiving settings.
 
 v1.1
-Configuration removed from main bash script and placed in a separate file - WarDriving.cfg
+- Feature: Configuration removed from main bash script and placed in a separate file - WarDriving.cfg
 This spares the user from having to re-enter their configuration details into the main bash script every time they upgrade or change versions.
 An example configuration file is provided - WarDriving.cfg.example
 If the user does not have an existing WarDriving.cfg file (i.e. first download and not an upgrade), then they should edit the example file before renaming it to WarDriving.cfg (i.e. cp WarDriving.cfg.example WarDriving.cfg)
