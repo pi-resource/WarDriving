@@ -15,8 +15,8 @@
 #	9. Wait a set amount of time before restarting this script
 #
 # Author: pi-resource.com
-VERSION='1.4'
-RELEASE_DATE='2017-12-19'
+VERSION='1.4.1'
+RELEASE_DATE='2017-12-20'
 
 #############
 # Constants #
@@ -511,6 +511,13 @@ fi
 printf '\n'
 displayConfig
 
+# if friendlyName is set, then add a full stop to the end of it.
+if [ -z "$friendlyName" ]; then
+	:
+else
+	friendlyName+="."
+fi
+
 # If UPS is enabled, check it is working.
 # If it is enabled but not working, then the function sets the 'upsInstalled' variable to 0 to prevent furter attempts.
 if [ $upsInstalled -eq 1 ]; then
@@ -643,12 +650,6 @@ do
 		# Generate a random 8 character alphanumeric string (upper and lowercase)
 		# uuid=$(< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 		uuid=$RANDOM
-		# if friendlyName is set, then add a full stop to the end of it.
-		if [ -z "$friendlyName" ]; then
-			:
-		else
-			friendlyName+="."
-		fi
 		# create the tar gzip file. 
 		env GZIP=-9 tar -czvf /home/pi/WarDriving/logs/compressed/"$flag.$friendlyName$mac.$(date +%s).$uuid".tar.gz -C /home/pi/WarDriving/logs/preprocessed .  # dont forget the dot on the end - it's important!
 
